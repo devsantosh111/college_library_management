@@ -8,7 +8,7 @@ class Student(models.Model):
     middleName = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50)
     age = models.IntegerField()
-    contact = models.IntegerField(unique=True)
+    contact = models.CharField(max_length=20, unique=True)
     email = models.CharField(max_length=50, unique=True)
     address = models.CharField(max_length=50)
 
