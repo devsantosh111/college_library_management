@@ -1,10 +1,10 @@
 from django.db import models
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 # Create your models here.
 
 class Student(models.Model):
-    studentId = models.CharField(max_length=50, primary_key=True)
+    studentId = models.CharField(max_length=50, primary_key=True, blank=True)
     firstName = models.CharField(max_length=50)
     middleName = models.CharField(max_length=50, blank=True)
     lastName = models.CharField(max_length=50)
@@ -15,13 +15,22 @@ class Student(models.Model):
 
     @property
     def fullName(self):
-        return f"{self.firstName} {self.middleName or ''} {self.lastName}"
+        if self.middleName:
+            return f"{self.firstName} {self.middleName} {self.lastName}"
+        return f"{self.firstName} {self.lastName}"
     
     @classmethod
     def generate_student_id(cls):
         prefix = "STD12310"
         count = cls.objects.count()
         return f"{prefix}{count + 1:04}"
+    
+    
+    def save(self, *args, **kwargs):
+        if not self.studentId:
+            self.studentId = self.__class__.generate_student_id()
+        return super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Student: {self.fullName}"
@@ -50,25 +59,17 @@ class Book(models.Model):
     def __str__(self):
         return f"Book: {self.title}"
 
+
 class Transaction(models.Model):
-    transactionId = models.AutoField(primary_key=True)
-    studetnId = models.ForeignKey(Student, on_delete=models.CASCADE)
-
-
-class Burrowing(models.Model):
-    burrowingId = models.AutoField(primary_key=True)
-    bookId = models.ForeignKey(Book, on_delete=models.CASCADE)
-
-
-class Report(models.Model):
     reportId = models.AutoField(primary_key=True)
-    transactionId = models.ForeignKey(Transaction, on_delete=models.CASCADE)
-    burrowingId = models.ForeignKey(Burrowing, on_delete=models.CASCADE)
-    transactionDate = models.DateField(auto_now_add=True, unique=True)
-    returnDate = models.DateField()
+    studentId = models.ForeignKey(Student, on_delete=models.CASCADE)
+    bookId = models.ForeignKey(Book, on_delete=models.CASCADE)
+    transactionDate = models.DateField(blank=True, unique=True)
+    returnDate = models.DateField(blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.reportId and not self.returnDate:
+        if not self.transactionDate and not self.returnDate:
+            self.transactionDate = datetime.now()
             self.returnDate = self.transactionDate + timedelta(days=14)
         return super().save(*args, **kwargs)
 
